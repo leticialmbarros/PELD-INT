@@ -1,0 +1,5 @@
+{
+  "name": "Sistema de Lançamento de Despesas – PELD",
+  "description": "Sistema para lançamento estruturado de despesas do projeto PELD, com validação de regras do CNPq e integração com Google Sheets.",
+  "requestFramePermissions": []
+}
