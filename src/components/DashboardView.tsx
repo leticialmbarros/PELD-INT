@@ -6,7 +6,7 @@ import {
 import { PROJETO_INFO } from '../constants';
 import { Wallet, TrendingUp, Target, Calendar, AlertCircle, Loader2, CheckCircle2, XCircle, Package, MapPin, FileWarning, AlertTriangle, Download } from 'lucide-react';
 import { UserRole } from '../App';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
 const COLORS = ['#059669', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -304,15 +304,26 @@ export default function DashboardView({ role }: DashboardProps) {
     if (!dashboardRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(dashboardRef.current, { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#f8fafc' // slate-50
+      // Use html-to-image instead of html2canvas to support modern CSS like oklch
+      const imgData = await htmlToImage.toPng(dashboardRef.current, {
+        quality: 1,
+        backgroundColor: '#f8fafc',
+        pixelRatio: 2 // For higher resolution
       });
-      const imgData = canvas.toDataURL('image/png');
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      // We need to calculate the height based on the image aspect ratio
+      // Since we don't have the canvas directly, we can create an image element to get dimensions
+      const img = new Image();
+      img.src = imgData;
+      
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+      
+      const pdfHeight = (img.height * pdfWidth) / img.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Relatorio_PELD_${selectedGroup}_${new Date().toISOString().split('T')[0]}.pdf`);
